@@ -43,7 +43,7 @@ impl Client {
           match subscription.send(message) {
             Err(_) => {
               error!("Cannot send message to receiver");
-              futures::future::err(Error::Generic("Cannot send message to receiver"))
+              futures::future::err(Error::Internal("Cannot send message to receiver"))
             },
             Ok(_) => {
               futures::future::ok(())
@@ -75,7 +75,7 @@ impl Client {
       .send(msg)
       .map_err(|error| {
         error!("Error while sending: {}", error);
-        Error::Generic("Cannot send")
+        Error::Internal("Cannot send message")
       })
       .and_then(|_| {
         Call::new(receiver)
@@ -94,7 +94,7 @@ impl Client {
           StatusCode::Success => {
             match response.payload {
               IncomingPayload::ReadParameter { value, .. } => futures::future::ok(value),
-              _ => futures::future::err(Error::Generic("Invalid response payload"))
+              payload => futures::future::err(Error::UnexpectedResponsePayload("ReadParameter", payload))
             }
           },
           status => futures::future::err(Error::NonSuccessResponse(status))
@@ -114,7 +114,7 @@ impl Client {
           StatusCode::Success => {
             match response.payload {
               IncomingPayload::WriteParameter { .. } => futures::future::ok(()),
-              _ => futures::future::err(Error::Generic("Invalid response payload"))
+              payload => futures::future::err(Error::UnexpectedResponsePayload("WriteParameter", payload))
             }
           },
           status => futures::future::err(Error::NonSuccessResponse(status))
@@ -133,7 +133,7 @@ impl Client {
           StatusCode::Success => {
             match response.payload {
               IncomingPayload::DeviceState { state, .. } => futures::future::ok(state),
-              _ => futures::future::err(Error::Generic("Invalid response payload"))
+              payload => futures::future::err(Error::UnexpectedResponsePayload("DeviceState", payload))
             }
           },
           status => futures::future::err(Error::NonSuccessResponse(status))
@@ -152,7 +152,7 @@ impl Client {
           StatusCode::Success => {
             match response.payload {
               IncomingPayload::ChangeNetworkState { .. } => futures::future::ok(()),
-              _ => futures::future::err(Error::Generic("Invalid response payload"))
+              payload => futures::future::err(Error::UnexpectedResponsePayload("ChangeNetworkState", payload))
             }
           },
           status => futures::future::err(Error::NonSuccessResponse(status))
@@ -171,7 +171,7 @@ impl Client {
           StatusCode::Success => {
             match response.payload {
               payload@IncomingPayload::ApsDataIndication { .. } => futures::future::ok(payload),
-              _ => futures::future::err(Error::Generic("Invalid response payload"))
+              payload => futures::future::err(Error::UnexpectedResponsePayload("ApsDataIndication", payload))
             }
           },
           status => futures::future::err(Error::NonSuccessResponse(status))

@@ -2,6 +2,7 @@ use std::convert::From;
 use failure::Fail;
 
 use crate::protocol::constants::StatusCode;
+use crate::protocol::IncomingPayload;
 
 #[derive(Fail, Debug)]
 pub enum Error {
@@ -13,10 +14,12 @@ pub enum Error {
     Encoding(&'static str),
     #[fail(display = "Decoding error: {}", _0)]
     Decoding(&'static str),
-    #[fail(display = "Generic error: {}", _0)]
-    Generic(&'static str),
+    #[fail(display = "Internal error: {}", _0)]
+    Internal(&'static str),
     #[fail(display = "Device returns non success code: {:?}", _0)]
-    NonSuccessResponse(StatusCode)
+    NonSuccessResponse(StatusCode),
+    #[fail(display = "The payload response was not expected: expected: {} received: {:?}", _0, _1)]
+    UnexpectedResponsePayload(&'static str, IncomingPayload),
 }
 
 impl From<std::io::Error> for Error {

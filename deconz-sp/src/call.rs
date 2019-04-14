@@ -21,7 +21,7 @@ impl Future for Call {
   fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
     let msg = try_ready!(self.receiver.poll().map_err(|err| {
       error!("Channel canceled: {}", err);
-      Error::Generic("Channel canceled")
+      Error::Internal("Channel canceled")
     }));
     Ok(Async::Ready(msg))
   }
