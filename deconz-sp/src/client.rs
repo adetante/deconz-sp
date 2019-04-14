@@ -22,7 +22,9 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(device_path: &'static str) -> Result<Self, Error> {
+    pub fn new(
+        device_path: &'static str,
+    ) -> Result<(Self, impl Stream<Item = IncomingPayload, Error = ()>), Error> {
         debug!("Connect to device {}...", device_path);
         let serial = tokio_serial::Serial::from_path(
             device_path,
@@ -35,6 +37,7 @@ impl Client {
         let subscriptions: Arc<RwLock<BTreeMap<SubscriptionId, Sender<IncomingMessage>>>> =
             Arc::new(RwLock::new(BTreeMap::new()));
         let (sink, stream) = Framed::new(serial, Codec::new()).split();
+        let (notif_tx, notif_rx) = unbounded();
         let (tx, rx) = unbounded();
         let forward_to_sink = rx.forward(sink.sink_map_err(|_| ())).map(|_| ());
         let subscriptions_ = subscriptions.clone();
@@ -57,7 +60,13 @@ impl Client {
                     }
                 } else {
                     debug!("No subscription");
-                    futures::future::ok(())
+                    match notif_tx.clone().unbounded_send(message.payload) {
+                        Err(_) => {
+                            error!("Cannot send notification");
+                            futures::future::err(Error::Internal("Cannot send notification"))
+                        }
+                        Ok(_) => futures::future::ok(()),
+                    }
                 }
             })
             .map_err(|err| {
@@ -66,11 +75,14 @@ impl Client {
             });
         tokio::spawn(forward_to_sink);
         tokio::spawn(process_stream);
-        Ok(Self {
-            sender: tx,
-            next_seq: RwLock::new(0),
-            subscriptions,
-        })
+        Ok((
+            Self {
+                sender: tx,
+                next_seq: RwLock::new(0),
+                subscriptions,
+            },
+            notif_rx,
+        ))
     }
 
     fn send_request(

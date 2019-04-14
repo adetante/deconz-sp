@@ -16,41 +16,22 @@ cargo test
 
 ## Example
 
+See `example/src/main.rs` for a working example.
+
 `deconz_sp::Client` wraps the communication with the device.  
 The Tokio runtime must be started to use the client.
 
 ```rust
-tokio::run(futures::lazy(||{
-        let client = deconz_sp::Client::new("/dev/tty.usbserial-DM00ZSS9")
-        					.expect("Cannot initialize DeCONZ client");
-
-        let get_security_mode = client.read_parameter(constants::ParameterCode::SecurityMode)
-        	.then(|result| {
-	            match &result {
-	                Err(error) => println!("Cannot read parameter value: {}", error),
-	                Ok(value) => println!("SecurityMode = {:?}", value)
-	            };
-	            result
-   		     });
-
-        let get_device_state = client.device_state()
-        	.then(|result| {
-	            match &result {
-	                Err(error) => println!("Cannot read device state: {}", error),
-	                Ok(value) => println!("DeviceState = {:?}", value)
-	            };
-	            result
-        });;
-
-        get_security_mode
-            .and_then(|_| get_device_state)
-            .map(|_|()).map_err(|_|())
-    }));
+tokio::run(futures::lazy(|| {
+        let (client, notifications) = deconz_sp::Client::new("/dev/tty.usbserial-DM00ZSS9")
+            .expect("Cannot initialize deCONZ client");
+        // ...
+}))
 ```
 
+`deconz_sp::Client::new` returns a tuple `(Client, Stream<Item = IncomingPayload>)` where `Client` is used to send requests to device, and `Stream` is the stream of unsolicited received messages.
 
-Run the example: 
-
+Run the example:
 ```
 RUST_LOG=deconz_sp=TRACE cargo run
 ```
