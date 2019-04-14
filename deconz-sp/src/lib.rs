@@ -1,10 +1,10 @@
-mod protocol;
-mod error;
-mod client;
 mod call;
+mod client;
+mod error;
+mod protocol;
 
-pub use protocol::{ OutgoingMessage, IncomingMessage };
+pub use client::Client;
+pub use error::Error;
 pub use protocol::constants;
 pub use protocol::types;
-pub use error::Error;
-pub use client::Client;
+pub use protocol::{IncomingMessage, OutgoingMessage};
