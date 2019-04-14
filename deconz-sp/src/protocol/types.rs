@@ -43,6 +43,15 @@ impl ParameterValue {
       ParameterValue::U64(value) => *value
     }
   }
+
+  pub fn from_value_and_len(value: u64, len: usize) -> Self {
+    match len {
+      1 => ParameterValue::U8(value as u8),
+      2 => ParameterValue::U16(value as u16),
+      4 => ParameterValue::U32(value as u32),
+      _ => ParameterValue::U64(value)
+    }
+  }
 }
 
 impl std::convert::From<u8> for ParameterValue {

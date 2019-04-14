@@ -42,8 +42,10 @@ impl IncomingPayload {
         let parameter_value = LittleEndian::read_uint(&input[3..3 + parameter_len], parameter_len);
         match parameter {
           None => Err(Error::Decoding("Unknown parameter id")),
-          // TODO: always return U64...
-          Some(parameter) => Ok(IncomingPayload::ReadParameter { parameter, value: ParameterValue::from(parameter_value) })
+          Some(parameter) => Ok(IncomingPayload::ReadParameter {
+            parameter,
+            value: ParameterValue::from_value_and_len(parameter_value, parameter_len)
+          })
         }
       },
       CommandCode::WriteParameter => {
